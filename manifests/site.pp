@@ -14,11 +14,11 @@ class { 'openstack::test_file': }
 # environments
 
 # assumes that eth0 is the public interface
-$public_interface        = 'eth0'
+$public_interface        = 'eth1'
 # assumes that eth1 is the interface that will be used for the vm network
 # this configuration assumes this interface is active but does not have an
 # ip address allocated to it.
-$private_interface       = 'eth1'
+$private_interface       = 'eth2'
 # credentials
 $admin_email             = 'root@localhost'
 $admin_password          = 'keystone_admin'
@@ -31,7 +31,7 @@ $glance_user_password    = 'glance_pass'
 $rabbit_password         = 'openstack_rabbit_password'
 $rabbit_user             = 'openstack_rabbit_user'
 $fixed_network_range     = '10.0.0.0/24'
-$floating_network_range  = '192.168.101.64/28'
+$floating_network_range  = '172.16.0.64/28'
 # switch this to true to have all service log at verbose
 $verbose                 = false
 # by default it does not enable atomatically adding floating IPs
@@ -45,7 +45,7 @@ $auto_assign_floating_ip = false
 node /openstack-all/ {
 
   class { 'openstack::all':
-    public_address          => $ipaddress_eth0,
+    public_address          => $ipaddress_eth1,
     public_interface        => $public_interface,
     private_interface       => $private_interface,
     admin_email             => $admin_email,
@@ -128,7 +128,7 @@ node /openstack-compute/ {
   class { 'openstack::compute':
     public_interface   => $public_interface,
     private_interface  => $private_interface,
-    internal_address   => $ipaddress_eth0,
+    internal_address   => $ipaddress_eth1,
     libvirt_type       => 'qemu',
     fixed_range        => $fixed_network_range,
     network_manager    => 'nova.network.manager.FlatDHCPManager',
