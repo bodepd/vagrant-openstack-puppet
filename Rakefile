@@ -13,9 +13,11 @@ namespace :openstack_demo do
     Dir.chdir('razor-puppet-puppetdb-demo/') do
 
       # install all module dependencies
-      puts `librarian-puppet install`
+      system('librarian-puppet install --verbose')
       # bring up a master
-      puts `vagrant up master`
+      Dir.chdir('env/full-noosimage') do
+        system('vagrant up master')
+      end
 
     end
 
