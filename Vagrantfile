@@ -34,9 +34,11 @@ Vagrant::Config.run do |config|
     box_config.vm.box       = 'precise64'
     box_config.vm.host_name = 'openstack-compute-1.openstack.vm'
     box_config.vm.customize ["modifyvm", :id, "--name", 'openstack-compute-1.openstack.vm']
-    box_config.vm.customize ["modifyvm", :id, "--memory", 2048]
+    box_config.vm.customize ["modifyvm", :id, "--memory", 1512]
     box_config.vm.network :hostonly, '172.16.0.4'
+    box_config.vm.customize ["modifyvm", :id, "--nicpromisc2", "allow-all"]
     box_config.vm.network :hostonly, '172.16.1.4'
+    box_config.vm.customize ["modifyvm", :id, "--nicpromisc3", "allow-all"]
     box_config.vm.provision :puppet do |puppet|
       puppet.manifests_path = "manifests"
       puppet.manifest_file  = "hosts.pp"
@@ -52,9 +54,11 @@ Vagrant::Config.run do |config|
     box_config.vm.box       = 'precise64'
     box_config.vm.host_name = 'openstack-compute-2.openstack.vm'
     box_config.vm.customize ["modifyvm", :id, "--name", 'openstack-compute-2.openstack.vm']
-    box_config.vm.customize ["modifyvm", :id, "--memory", 2048]
+    box_config.vm.customize ["modifyvm", :id, "--memory", 1512]
     box_config.vm.network :hostonly, '172.16.0.5'
+    box_config.vm.customize ["modifyvm", :id, "--nicpromisc2", "allow-all"]
     box_config.vm.network :hostonly, '172.16.1.5'
+    box_config.vm.customize ["modifyvm", :id, "--nicpromisc3", "allow-all"]
     box_config.vm.provision :puppet do |puppet|
       puppet.manifests_path = "manifests"
       puppet.manifest_file  = "hosts.pp"
