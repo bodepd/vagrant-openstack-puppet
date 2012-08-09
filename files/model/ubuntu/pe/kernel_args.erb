@@ -1,0 +1,3 @@
+<% if @node.dhcp_mac %>BOOTIF=<%= @node.dhcp_mac %>  preseed/url=<%= "#{api_svc_uri}/policy/callback/#{policy_uuid}/preseed/file" %> debian-installer/locale=en_US netcfg/choose_interface=auto priority=critical
+<% else %>preseed/url=<%= "#{api_svc_uri}/policy/callback/#{policy_uuid}/preseed/file" %> debian-installer/locale=en_US netcfg/choose_interface=auto priority=critical
+<% end %>

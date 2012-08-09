@@ -1,0 +1,9 @@
+#!ipxe
+echo Razor <%= @label %> model boot_call
+echo Installation node UUID : <%= node.uuid %>
+echo Installation image UUID: <%= @image_uuid %>
+echo Active Model node state: <%= @current_state %>
+echo Continuing local boot
+
+sleep 3
+sanboot --no-describe --drive 0x80

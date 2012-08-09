@@ -1,0 +1,10 @@
+#!ipxe
+echo Razor <%= @label %> model boot_call
+echo Installation node UUID : <%= node.uuid %>
+echo Installation image UUID: <%= @image_uuid %>
+echo Active Model node state: <%= @current_state %>
+
+sleep 3
+kernel <%= "#{image_svc_uri}/#{@image_uuid}/#{kernel_path} #{kernel_args(policy_uuid)}" %> || goto error
+initrd <%= "#{image_svc_uri}/#{@image_uuid}/#{initrd_path}" %> || goto error
+boot

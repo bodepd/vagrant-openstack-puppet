@@ -2,68 +2,59 @@
 # This environment is intended to demonstrate how a use could bootstrap an openstack
 # environment from bare matal in a totally automated fashion.
 #
+
+class String
+  def to_bool
+    return true if self == true || self =~ (/(true|t|yes|y|1)$/i)
+    return false if self == false || self.blank? || self =~ (/(false|f|no|n|0)$/i)
+    raise ArgumentError.new("invalid value for Boolean: \"#{self}\"")
+  end
+end
+
 Vagrant::Config.run do |config|
 
-  config.vm.box     = 'precise64'
-  config.vm.box_url = 'http://files.vagrantup.com/precise64.box'
-
-  # build out a puppet master yo!!
-  config.vm.define :controller do |box_config|
-    box_config.vm.host_name = 'controller.openstack.vm'
-
-    box_config.vm.customize ["modifyvm", :id, "--memory", 1024]
-    box_config.vm.customize ["modifyvm", :id, "--name", 'controller.openstack.vm']
-    box_config.vm.network :hostonly, '172.16.0.3'
-    box_config.vm.network :hostonly, '172.16.1.3'
-
-    # this is to configure a host entry for communicating to the puppet master
-    box_config.vm.provision :puppet do |puppet|
-      puppet.manifests_path = "manifests"
-      puppet.manifest_file  = "hosts.pp"
-      puppet.module_path    = 'razor-puppet-puppetdb-demo/modules'
-    end
-
-    box_config.vm.provision :puppet_server, :options => '--test --pluginsync' do | puppet|
-      puppet.puppet_server = 'puppet'
-      # always create a new certificate!
-      puppet.puppet_node   = "openstack-controller-#{Time.now.strftime('%Y%m%d%m%s')}"
-    end
+  if num_instances_str = ENV['OPENSTACK_COMPUTE_NODES']
+    num_instances = num_instances_str.to_i + 1
+  else
+    num_instances = 3
   end
 
-  config.vm.define :openstack_compute_1 do |box_config|
-    box_config.vm.box       = 'precise64'
-    box_config.vm.host_name = 'openstack-compute-1.openstack.vm'
-    box_config.vm.customize ["modifyvm", :id, "--name", 'openstack-compute-1.openstack.vm']
-    box_config.vm.customize ["modifyvm", :id, "--memory", 2048]
-    box_config.vm.network :hostonly, '172.16.0.4'
-    box_config.vm.network :hostonly, '172.16.1.4'
-    box_config.vm.provision :puppet do |puppet|
-      puppet.manifests_path = "manifests"
-      puppet.manifest_file  = "hosts.pp"
-      puppet.module_path    = 'razor-puppet-puppetdb-demo/modules'
-    end
-    box_config.vm.provision :puppet_server, :options => '--test --pluginsync' do | puppet|
-      puppet.puppet_server = 'puppet'
-      puppet.puppet_node   = "openstack-compute-1-#{Time.now.strftime('%Y%m%d%m%s')}"
-    end
+  # This assumes the master has one additional NIC that is host-only
+  master_info = `VBoxManage showvminfo master.puppetlabs.vm`
+  master_info.lines.each { |l| $master_nic_info = l if l =~ /NIC 2/ }
+  unless $master_nic_info =~ /Host-only Interface '(\w+)'/
+    raise RuntimeError, "Could not determine the Host-only network adapter"
+  end
+  host_network = $1
+
+  if ENV['OPENSTACK_GUI_MODE']
+    gui_mode = ENV['OPENSTACK_GUI_MODE'].to_bool
+  else
+    gui_mode = true
   end
 
-  config.vm.define :openstack_compute_2 do |box_config|
-    box_config.vm.box       = 'precise64'
-    box_config.vm.host_name = 'openstack-compute-2.openstack.vm'
-    box_config.vm.customize ["modifyvm", :id, "--name", 'openstack-compute-2.openstack.vm']
-    box_config.vm.customize ["modifyvm", :id, "--memory", 2048]
-    box_config.vm.network :hostonly, '172.16.0.5'
-    box_config.vm.network :hostonly, '172.16.1.5'
-    box_config.vm.provision :puppet do |puppet|
-      puppet.manifests_path = "manifests"
-      puppet.manifest_file  = "hosts.pp"
-      puppet.module_path    = 'razor-puppet-puppetdb-demo/modules'
-    end
-    box_config.vm.provision :puppet_server, :options => '--test --pluginsync' do | puppet|
-      puppet.puppet_server = 'puppet'
-      puppet.puppet_node   = "openstack-compute-2-#{Time.now.strftime('%Y%m%d%m%s')}"
+  (0...num_instances).each do |i|
+    config.vm.define "agent#{i}".intern do |agent|
+      if i == 0 # host 0 is a special snowflake
+        agent.vm.customize ["modifyvm", :id, "--memory", 512]
+      else
+        agent.vm.customize ["modifyvm", :id, "--memory", 2048]
+      end
+
+      # create a second NIC and enable promiscuous networking
+      agent.vm.customize ["modifyvm", :id, "--hostonlyadapter1", host_network]
+      agent.vm.customize ["modifyvm", :id, "--nicpromisc1", "allow-all"]
+      agent.vm.customize ["modifyvm", :id, "--nic2", "hostonly"]
+      agent.vm.customize ["modifyvm", :id, "--hostonlyadapter2", host_network]
+      agent.vm.customize ["modifyvm", :id, "--nicpromisc2", "allow-all"]
+      agent.vm.customize ["modifyvm", :id, "--nic3", "nat"]
+
+      agent.vm.boot_mode = 'gui' if gui_mode
+      agent.vm.box = "agent#{i}"
+      agent.vm.box_url = 'https://github.com/downloads/benburkert/bootstrap-razor/pxe-blank.box'
+      agent.vm.customize ["modifyvm", :id, "--name", "agent#{i}.puppetlabs.lan"]
+      agent.vm.customize ["modifyvm", :id, "--macaddress1", 'auto']
+      agent.ssh.port = 2222
     end
   end
-
 end

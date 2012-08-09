@@ -14,11 +14,11 @@ class { 'openstack::test_file': }
 # environments
 
 # assumes that eth0 is the public interface
-$public_interface        = 'eth1'
+$public_interface        = 'eth0'
 # assumes that eth1 is the interface that will be used for the vm network
 # this configuration assumes this interface is active but does not have an
 # ip address allocated to it.
-$private_interface       = 'eth2'
+$private_interface       = 'eth1'
 # credentials
 $admin_email             = 'root@localhost'
 $admin_password          = 'keystone_admin'
@@ -31,7 +31,7 @@ $glance_user_password    = 'glance_pass'
 $rabbit_password         = 'openstack_rabbit_password'
 $rabbit_user             = 'openstack_rabbit_user'
 $fixed_network_range     = '10.0.0.0/24'
-$floating_network_range  = '172.16.0.64/28'
+$floating_network_range  = '172.16.0.192/26'
 # switch this to true to have all service log at verbose
 $verbose                 = false
 # by default it does not enable atomatically adding floating IPs
@@ -73,15 +73,12 @@ node /openstack-all/ {
 
 }
 
-# multi-node specific parameters
-
-$controller_node_address  = '172.16.0.3'
-
-$controller_node_public   = $controller_node_address
-$controller_node_internal = $controller_node_address
-$sql_connection         = "mysql://nova:${nova_db_password}@${controller_node_internal}/nova"
-
 node /openstack-controller/ {
+
+  $controller_node_address  = $ipaddress_eth0
+  $controller_node_public   = $controller_node_address
+  $controller_node_internal = $controller_node_address
+
 
 #  class { 'nova::volume': enabled => true }
 
@@ -111,7 +108,7 @@ node /openstack-controller/ {
     nova_user_password      => $nova_user_password,
     rabbit_password         => $rabbit_password,
     rabbit_user             => $rabbit_user,
-    export_resources        => false,
+    export_resources        => true,
   }
 
   class { 'openstack::auth_file':
@@ -133,13 +130,10 @@ node /openstack-compute/ {
     fixed_range        => $fixed_network_range,
     network_manager    => 'nova.network.manager.FlatDHCPManager',
     multi_host         => true,
-    sql_connection     => $sql_connection,
+    sql_connection     => false,
     nova_user_password => $nova_user_password,
-    rabbit_host        => $controller_node_internal,
     rabbit_password    => $rabbit_password,
     rabbit_user        => $rabbit_user,
-    glance_api_servers => "${controller_node_internal}:9292",
-    vncproxy_host      => $controller_node_public,
     vnc_enabled        => true,
     verbose            => $verbose,
     manage_volumes     => true,
@@ -149,6 +143,96 @@ node /openstack-compute/ {
 }
 
 node /master/ {
-  # TODO need to add the native types for building out Razor objects here
-  notify { 'Bow to your master': }
+  # we assume the razor service has already been started here.
+  rz_image { 'ubuntu_precise':
+    ensure  => present,
+    type    => 'os',
+    source  => '/vagrant/ubuntu-12.04-server-amd64.iso',
+    version => '12.04',
+    tag     => ['os','pe']
+  }
+
+  file { '/opt/razor/image/puppet-enterprise-2.5.3-ubuntu-12.04-amd64.tar.gz':
+    source => '/vagrant/puppet-enterprise-2.5.3-ubuntu-12.04-amd64.tar.gz',
+    tag    => ['pe']
+  }
+
+  file { '/opt/razor/lib/project_razor/model':
+    ensure  => 'file',
+    source  => '/vagrant/model',
+    recurse => true,
+    tag     => ['os','pe']
+  } -> Rz_model<| |>
+
+  rz_model { 'precise_controller_os':
+    ensure      => present,
+    image       => 'ubuntu_precise',
+    metadata    => {'domainname' => 'puppetlabs.vm', 'hostname_prefix' => 'openstack-controller', 'root_password' => 'openstack' },
+    template    => 'ubuntu_precise_puppet',
+    tag         => ['os']
+  }
+
+  rz_model { 'precise_compute_os':
+    ensure      => present,
+    image       => 'ubuntu_precise',
+    metadata    => {'domainname' => 'puppetlabs.vm', 'hostname_prefix' => 'openstack-compute', 'root_password' => 'openstack' },
+    template    => 'ubuntu_precise_puppet',
+    tag         => ['os']
+  }
+
+  rz_policy { 'controller_os':
+    ensure   => present,
+    broker   => none,
+    model    => 'precise_controller_os',
+    enabled  => true,
+    tags     => ['memsize_500MiB'],
+    template => 'linux_deploy',
+    tag      => ['os']
+  }
+
+  rz_policy { 'compute_os':
+    ensure   => present,
+    broker   => none,
+    model    => 'precise_compute_os',
+    enabled  => true,
+    tags     => ['memsize_2017MiB'],
+    template => 'linux_deploy',
+    tag      => ['os']
+  }
+
+  rz_model { 'precise_controller_pe':
+    ensure      => present,
+    image       => 'ubuntu_precise',
+    metadata    => {'domainname' => 'puppetlabs.vm', 'hostname_prefix' => 'openstack-controller', 'root_password' => 'openstack' },
+    template    => 'ubuntu_precise_pe',
+    tag         => ['pe']
+  }
+
+  rz_model { 'precise_compute_pe':
+    ensure      => present,
+    image       => 'ubuntu_precise',
+    metadata    => {'domainname' => 'puppetlabs.vm', 'hostname_prefix' => 'openstack-compute', 'root_password' => 'openstack' },
+    template    => 'ubuntu_precise_pe',
+    tag         => ['pe']
+  }
+
+  rz_policy { 'controller_pe':
+    ensure   => present,
+    broker   => none,
+    model    => 'precise_controller_pe',
+    enabled  => true,
+    tags     => ['memsize_500MiB'],
+    template => 'linux_deploy',
+    tag      => ['pe']
+  }
+
+  rz_policy { 'compute_pe':
+    ensure   => present,
+    broker   => none,
+    model    => 'precise_compute_pe',
+    enabled  => true,
+    tags     => ['memsize_2017MiB'],
+    template => 'linux_deploy',
+    tag      => ['pe']
+  }
 }

@@ -1,0 +1,82 @@
+#!/bin/bash
+
+cat > /etc/network/interfaces <<EOFIFACES
+auto lo
+iface lo inet loopback
+
+auto eth2
+iface eth2 inet dhcp
+
+auto eth1
+iface eth1 inet dhcp
+
+auto eth0
+iface eth0 inet dhcp
+EOFIFACES
+
+service networking restart
+
+gateway_ip=`ifconfig | sed -rn 's/\s+inet addr:(10.0.[[:digit:]]+).[[:digit:]]+\s+Bcast:10.0.[[:digit:]]+.255\s+Mask:255.255.255.0/\1.2/p'`
+
+route del default
+route add default gw $gateway_ip
+
+# Configure the puppet labs apt repository
+apt-key adv --recv-key --keyserver pool.sks-keyservers.net 4BD6EC30
+
+  # Setup the apt Puppet repository
+cat > /etc/apt/sources.list.d/puppetlabs.list <<EOFAPTREPO
+deb http://apt.puppetlabs.com/ precise main
+EOFAPTREPO
+apt-get update
+
+hostname <%= hostname %>
+echo <%= hostname %> > /etc/hostname
+
+# this set of commands should convert the first local (but non-loopback) IP
+# address in the /etc/hosts file to an entry that has the fully-qualified
+# hostname and local hostname as part of the entry (so that tehse names can
+# be resolved properly).  A backup of the original file will be left in place
+# in the /etc/hosts- file
+cp -p /etc/hosts /etc/hosts-
+grep '^127\.0\.0\.1.*' /etc/hosts- > /etc/hosts
+grep -v '^127\.0\.0\.1.*' /etc/hosts- | grep '^127\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}.*' | head -1 | sed 's/^\(127\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\)\([[:blank:]]\{1,\}\)\(.*\)$/\1\2'<%= hostname %>.<%= domainname %>'\2'<%= hostname %>'/' >> /etc/hosts
+grep -v '^127\.0\.0\.1.*' /etc/hosts- | grep '^127\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}.*' | tail -n +2 >> /etc/hosts
+grep -v '^127\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}.*' /etc/hosts- >> /etc/hosts
+
+[ "$?" -eq 0 ] && curl <%= callback_url("postinstall", "set_hostname_ok") %> || curl <%= callback_url("postinstall", "set_hostname_fail") %>
+
+sed -i 's_<%= config.image_svc_host %>:<%= config.image_svc_port %>/razor/image/os/<%= @image_uuid %>_archive.ubuntu.com/ubuntu_g' /etc/apt/sources.list && curl <%= callback_url("postinstall", "sources_fix") %>
+apt-get -y update
+[ "$?" -eq 0 ] && curl <%= callback_url("postinstall", "apt_update_ok") %> || curl <%= callback_url("postinstall", "apt_update_fail") %>
+
+apt-get -y upgrade
+[ "$?" -eq 0 ] && curl <%= callback_url("postinstall", "apt_upgrade_ok") %> || curl <%= callback_url("postinstall", "apt_upgrade_fail") %>
+
+apt-get -y install lsb-release ruby rubygems facter puppet openssh-server
+[ "$?" -eq 0 ] && curl <%= callback_url("postinstall", "apt_install_ok") %> || curl <%= callback_url("postinstall", "apt_install_fail") %>
+
+cat >> /etc/puppet/puppet.conf <<EOFPUPPETCONF
+
+[agent]
+server = master.puppetlabs.vm
+EOFPUPPETCONF
+
+cat > /etc/default/puppet <<EOFSERVICE
+# Defaults for puppet - sourced by /etc/init.d/puppet
+
+# Start puppet on boot?
+START=yes
+
+# Startup options
+DAEMON_OPTS=""
+EOFSERVICE
+
+service puppet restart
+
+# Get current IP
+node_ip=`facter ipaddress`
+# Send IP up
+curl <%= callback_url("postinstall", "send_ips") %>/$node_ip
+# get final script
+curl <%= callback_url("postinstall", "boot") %> | sh

@@ -2,10 +2,6 @@
 # This puppet manifest is already applied first to do some environment specific things
 #
 
-Exec {
-  logoutput => true,
-}
-
 #
 # configure apt to use my squid proxy
 # I highly recommend that anyone doing development on
@@ -13,7 +9,7 @@ Exec {
 #
 class { 'apt':
   proxy_host => '172.16.0.1',
-  proxy_port => '3128',
+  proxy_port => '3129',
 }
 
 # an apt-get update is usally required to ensure that
@@ -27,4 +23,8 @@ exec { '/usr/bin/apt-get update':
 #
 host { 'puppet':
   ip => '172.16.0.2',
+}
+
+group { 'puppet':
+  ensure => 'present',
 }
