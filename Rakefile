@@ -72,7 +72,11 @@ namespace :openstack_demo do
     repos_to_clone.each do |remote, local|
       # I should check to see if the file is there?
       outpath = File.join(modulepath, local)
-      unless File.directory? outpath
+      if File.directory? outpath
+        Dir.chdir(outpath) do
+          system("git pull")
+        end
+      else
         system("git clone #{remote} #{outpath}")
       end
     end
