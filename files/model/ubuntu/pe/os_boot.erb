@@ -30,6 +30,7 @@ q_puppet_enterpriseconsole_install=n
 q_puppet_symlinks_install=y
 q_puppetagent_certname=<%= hostname %>
 q_puppetagent_install=y
+q_puppet_agent_first_run=n
 q_puppetagent_server=master.puppetlabs.vm
 q_puppetca_install=n
 q_puppetmaster_install=n
@@ -76,6 +77,12 @@ wget http://master.puppetlabs.vm:8027/razor/image/puppet-enterprise-2.5.3-ubuntu
 tar xvf puppet-enterprise-2.5.3-ubuntu-12.04-amd64.tar.gz
 cd puppet-enterprise-2.5.3-ubuntu-12.04-amd64
 ./puppet-enterprise-installer -a /tmp/answers
+
+AGENT_RETRY_COUNTER=10
+until [ $COUNTER -eq 0 ] || puppet agent --onetime --no-daemonize; do
+  sleep 30
+  let AGENT_RETRY_COUNTER-=1
+done
 
 # Get current IP
 node_ip=`facter ipaddress`

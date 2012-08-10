@@ -108,7 +108,7 @@ node /openstack-controller/ {
     nova_user_password      => $nova_user_password,
     rabbit_password         => $rabbit_password,
     rabbit_user             => $rabbit_user,
-    export_resources        => true,
+    export_resources        => false,
   }
 
   class { 'openstack::auth_file':
@@ -121,6 +121,11 @@ node /openstack-controller/ {
 }
 
 node /openstack-compute/ {
+  # External lookups.
+  $rabbit_connection_hash = collect_rabbit_connection('fqdn', 'architecture=amd64')
+  $nova_db_addr = collect_nova_db_connection('ipaddress_eth0', 'architecture=amd64')
+  $vnc_proxy_addr = unique(query_nodes('Class[nova::vncproxy]', 'ipaddress_eth0'))
+  $glance_api_addr = unique(query_nodes('Class[glance::api]', 'ipaddress_eth0'))
 
   class { 'openstack::compute':
     public_interface   => $public_interface,
@@ -130,10 +135,13 @@ node /openstack-compute/ {
     fixed_range        => $fixed_network_range,
     network_manager    => 'nova.network.manager.FlatDHCPManager',
     multi_host         => true,
-    sql_connection     => false,
+    sql_connection     => "mysql://nova:${nova_db_password}@${nova_db_addr}/nova",
     nova_user_password => $nova_user_password,
+    rabbit_host        => $rabbit_connection_hash['host'],
     rabbit_password    => $rabbit_password,
     rabbit_user        => $rabbit_user,
+    glance_api_servers => ["${glance_api_addr}:9292"],
+    vncproxy_host      => $vnc_proxy_addr,
     vnc_enabled        => true,
     verbose            => $verbose,
     manage_volumes     => true,

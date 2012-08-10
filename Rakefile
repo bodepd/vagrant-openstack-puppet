@@ -101,6 +101,7 @@ namespace :openstack_demo do
       else
         puppet_tags = "os"
       end
+      # the puppet manifest uses this tag to determine whether to deploy PE or OS using razor
       core_system("vagrant ssh master -c 'sudo puppet agent --test --waitforcert 1 --tags #{puppet_tags}'")
     end
   end
