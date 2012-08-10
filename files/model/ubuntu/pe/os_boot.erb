@@ -63,16 +63,6 @@ apt-get -y upgrade
 apt-get -y install lsb-release ruby rubygems openssh-server
 [ "$?" -eq 0 ] && curl <%= callback_url("postinstall", "apt_install_ok") %> || curl <%= callback_url("postinstall", "apt_install_fail") %>
 
-cat > /etc/default/puppet <<EOFSERVICE
-# Defaults for puppet - sourced by /etc/init.d/puppet
-
-# Start puppet on boot?
-START=yes
-
-# Startup options
-DAEMON_OPTS=""
-EOFSERVICE
-
 wget http://master.puppetlabs.vm:8027/razor/image/puppet-enterprise-2.5.3-ubuntu-12.04-amd64.tar.gz
 tar xvf puppet-enterprise-2.5.3-ubuntu-12.04-amd64.tar.gz
 cd puppet-enterprise-2.5.3-ubuntu-12.04-amd64
@@ -83,6 +73,8 @@ until [ $COUNTER -eq 0 ] || puppet agent --onetime --no-daemonize; do
   sleep 30
   let AGENT_RETRY_COUNTER-=1
 done
+
+service pe-agent restart
 
 # Get current IP
 node_ip=`facter ipaddress`

@@ -62,6 +62,12 @@ cat >> /etc/puppet/puppet.conf <<EOFPUPPETCONF
 server = master.puppetlabs.vm
 EOFPUPPETCONF
 
+AGENT_RETRY_COUNTER=10
+until [ $COUNTER -eq 0 ] || puppet agent --onetime --no-daemonize; do
+  sleep 30
+  let AGENT_RETRY_COUNTER-=1
+done
+
 cat > /etc/default/puppet <<EOFSERVICE
 # Defaults for puppet - sourced by /etc/init.d/puppet
 
@@ -72,7 +78,7 @@ START=yes
 DAEMON_OPTS=""
 EOFSERVICE
 
-service puppet restart
+service puppet start
 
 # Get current IP
 node_ip=`facter ipaddress`

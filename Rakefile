@@ -37,7 +37,7 @@ namespace :openstack_demo do
 
     # install razor-puppet-puppetdb-demo.git
     unless File.directory? 'razor-puppet-puppetdb-demo'
-      system('git clone git://github.com/branan/razor-puppet-puppetdb-demo.git')
+      system('git clone git://github.com/stephenrjohnson/razor-puppet-puppetdb-demo.git')
     end
 
     Dir.chdir('razor-puppet-puppetdb-demo/') do
