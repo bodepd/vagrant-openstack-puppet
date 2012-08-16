@@ -9,7 +9,7 @@
 #
 class { 'apt':
   proxy_host => '172.16.0.1',
-  proxy_port => '3129',
+  proxy_port => '3128',
 }
 
 # an apt-get update is usally required to ensure that
