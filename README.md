@@ -1,58 +1,30 @@
-Razor-vagrant-puppet-puppetdb-demo
-==================================
+This project can be used to build out openstack environments in 3 kinds of ways:
+- multi-node openstack environment using puppet apply
+- multi-node openstack environment using razor and puppet open source
+- multi-node openstack environment using razor and PE
 
-# Origanl Idea
+## openstack environment using razor and PE
 
-This demo is based on [razor-vagrant-demo] (https://github.com/benburkert/razor-vagrant-demo/).
+1. install PE.
 
-## Step 1: Setup
-First install virtual box
+  You should get PE version 2.5.3 for Ubuntu 64 bit from our website and place it in the files directory of this project
+  (you can also run the rake task openstack_demo:fetch_pe to download the installer payload, dont do this though, seriously)
 
-Then ensure that the the extension pack is installed:
+2. set the environment variable
 
- http://download.virtualbox.org/virtualbox/4.1.18/Oracle_VM_VirtualBox_Extension_Pack-4.1.18-78361.vbox-extpacks
+    export USE_PE=true
 
-It is unlikely that your virtualbox virtual machines will be able to PXE boot if the
-extension pack is not installed.
+3. install and configure PE + Razor
 
-## Step 2: Gems
-Install the following gems
+    rake deploy:razor
 
-* Vagrant
-* librarian-puppet
+This script does the following:
 
-## Step 3: Install the puppet modules
-librarian-puppet install
+- fetches the project git://github.com/branan/razor-puppet-puppetdb-demo.git
+- uses it to install and configure a functional server running PE, puppetdb, razor
+- fetches the openstack puppet modules and writes them into the masters directory
+- configures the razor master to 
 
-## Step 4: Launch the machines
-Start the virtual machines this will take a long time the first time.
-vagrant up
+## openstack with puppet and razor
 
-## Step 5: Update puppet manifest
-The site.pp only contains information for master, update to include what you need for the clients.
-
-## Step 6: Os images
-Once the virtual machines have booted they will be ready to install. Add the razor os images and polices you need.
-[razor-howto] (https://github.com/puppetlabs/Razor/wiki/)
-
-
-# OpenStack project
-
-This project uses vagrant to demonstrate how a user could use Puppet together
-with Razor and PuppetDB in order to bootstrap an environment from scratch.
-
-Although this demo environment actually uses vagrant and virtual machine
-instances, it actually
-
-It reused the puppetdb, razor demo to build out the puppetmaster and extends
-it by populating the master with openstack specific content.
-
-
-# TODO
-
-integration with razor
-  - create policies that say that machiens with 1024 are controllers (that we expect
-  only one) and that machines with 512 are computes.
-
-integrate with puppetdb
-  - compute nodes connect to the controller automatically
+    rake deploy:razor
