@@ -1,30 +1,36 @@
-This project can be used to build out openstack environments in 3 kinds of ways:
+# OpenStack Puppet Demo
+
+This project demonstrates OpenStack deployment with Puppet on Virtual Box using Vagrant.
+
+The demo can be used to build the following openstack environments:
 - multi-node openstack environment using puppet apply
 - multi-node openstack environment using razor and puppet open source
 - multi-node openstack environment using razor and PE
 
-## openstack environment using razor and PE
+## Deployment
 
-1. install PE.
+1. Ubuntu image and Puppet Enterprise Package.
+    If you already have Puppet Enterprise version 2.5.3 for Ubuntu 64 bit, and Ubuntu Precise 64 bit ISO please copy them to the files directory. If you don't have these files the following rake task will download them:
 
-  You should get PE version 2.5.3 for Ubuntu 64 bit from our website and place it in the files directory of this project
-  (you can also run the rake task openstack_demo:fetch_pe to download the installer payload, dont do this though, seriously)
+        rake task openstack_demo:fetch_image
 
-2. set the environment variable
+2. Configure the following environment variable to use Puppet Enterprise:
 
-    export USE_PE=true
+        export USE_PE=true
 
-3. install and configure PE + Razor
+3. Deploy razor and openstack demo:
 
-    rake deploy:razor
+        rake openstack_demo:deploy
 
-This script does the following:
+    This script does the following:
+    - git clone [razor-puppet-puppetdb-demo](http://github.com/branan/razor-puppet-puppetdb-demo).
+    - install and configure a functional puppet master, with puppetdb and razor.
+    - git clone the openstack puppet modules into the puppet master modulepath.
+    - configures razor with the appropriate image, model, and policy.
+    - launch empty basebox to be provisioned by razor and turned into openstack nodes.
 
-- fetches the project git://github.com/branan/razor-puppet-puppetdb-demo.git
-- uses it to install and configure a functional server running PE, puppetdb, razor
-- fetches the openstack puppet modules and writes them into the masters directory
-- configures the razor master to 
+## Known Issues
 
-## openstack with puppet and razor
+* Agent1 boot failure: "FATAL: Could not read from the boot medium! System halted."
 
-    rake deploy:razor
+Solution: download and install [Oracle VM VirtualBox Entension Pack](http://www.oracle.com/technetwork/server-storage/virtualbox/downloads/index.html#extpack).
