@@ -175,7 +175,7 @@ node /master/ {
   rz_model { 'precise_controller_os':
     ensure      => present,
     image       => 'ubuntu_precise',
-    metadata    => {'domainname' => 'puppetlabs.vm', 'hostname_prefix' => 'openstack-controller', 'root_password' => 'openstack' },
+    metadata    => {'domainname' => 'puppetlabs.vm', 'hostname_prefix' => 'openstack-controller', 'rootpassword' => 'openstack' },
     template    => 'ubuntu_precise_puppet',
     tag         => ['os']
   }
@@ -183,7 +183,7 @@ node /master/ {
   rz_model { 'precise_compute_os':
     ensure      => present,
     image       => 'ubuntu_precise',
-    metadata    => {'domainname' => 'puppetlabs.vm', 'hostname_prefix' => 'openstack-compute', 'root_password' => 'openstack' },
+    metadata    => {'domainname' => 'puppetlabs.vm', 'hostname_prefix' => 'openstack-compute', 'rootpassword' => 'openstack' },
     template    => 'ubuntu_precise_puppet',
     tag         => ['os']
   }
@@ -211,7 +211,7 @@ node /master/ {
   rz_model { 'precise_controller_pe':
     ensure      => present,
     image       => 'ubuntu_precise',
-    metadata    => {'domainname' => 'puppetlabs.vm', 'hostname_prefix' => 'openstack-controller', 'root_password' => 'openstack' },
+    metadata    => {'domainname' => 'puppetlabs.vm', 'hostname_prefix' => 'openstack-controller', 'rootpassword' => 'openstack' },
     template    => 'ubuntu_precise_pe',
     tag         => ['pe']
   }
@@ -219,7 +219,7 @@ node /master/ {
   rz_model { 'precise_compute_pe':
     ensure      => present,
     image       => 'ubuntu_precise',
-    metadata    => {'domainname' => 'puppetlabs.vm', 'hostname_prefix' => 'openstack-compute', 'root_password' => 'openstack' },
+    metadata    => {'domainname' => 'puppetlabs.vm', 'hostname_prefix' => 'openstack-compute', 'rootpassword' => 'openstack' },
     template    => 'ubuntu_precise_pe',
     tag         => ['pe']
   }
