@@ -22,7 +22,7 @@ alias :core_system :system
 
 def system (cmd)
   result = core_system cmd
-  raise RuntimeError unless $?.success?
+  raise(RuntimeError, $?) unless $?.success?
   result
 end
 
@@ -46,17 +46,17 @@ namespace :openstack_demo do
       system('librarian-puppet install --verbose')
       raise :RuntimeError unless $?.success?
       # bring up a master
-      if use_pe
-        Dir.chdir('env/full-pe') do
-          FileUtils.cp '../../../files/puppet-enterprise-2.5.3-ubuntu-12.04-amd64.tar.gz', './'
-            system('vagrant up master')
-        end
-      else
-        Dir.chdir('env/full-noosimage') do
-          system('vagrant up master')
-        end
-      end
+    end
 
+  end
+
+  desc 'start the actual puppet master'
+  task :start_master do
+    Dir.chdir("razor-puppet-puppetdb-demo/env/#{vagrant_env}") do
+      if use_pe
+        FileUtils.cp '../../../files/puppet-enterprise-2.5.3-ubuntu-12.04-amd64.tar.gz', './'
+      end
+      system('vagrant up master')
     end
 
   end
@@ -126,13 +126,21 @@ namespace :openstack_demo do
       end
     end
   end
-end
 
-namespace :deploy do
-  task :razor do
+  desc 'blow the whole darn thing away'
+  task 'destroy' do
+    system('vagrant destroy -f')
+    Dir.chdir("razor-puppet-puppetdb-demo/env/#{vagrant_env}") do
+      system('vagrant destroy -f')
+    end
+  end
+
+  desc 'deploys the entire environment'
+  task :deploy do
     Rake::Task['openstack_demo:install_master'.to_sym].invoke
     Rake::Task['openstack_demo:fetch_image'.to_sym].invoke
     Rake::Task['openstack_demo:setup'.to_sym].invoke
+    Rake::Task['openstack_demo:start_master'.to_sym].invoke
     Rake::Task['openstack_demo:configure_razor'.to_sym].invoke
     system("vagrant up")
   end
