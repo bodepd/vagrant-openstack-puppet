@@ -62,8 +62,8 @@ cat >> /etc/puppet/puppet.conf <<EOFPUPPETCONF
 server = master.puppetlabs.vm
 EOFPUPPETCONF
 
-AGENT_RETRY_COUNTER=10
-until [ $COUNTER -eq 0 ] || puppet agent --onetime --no-daemonize; do
+AGENT_RETRY_COUNTER=20
+until [ $AGENT_RETRY_COUNTER -eq 0 ] || puppet agent --onetime --no-daemonize --pluginsync; do
   sleep 30
   let AGENT_RETRY_COUNTER-=1
 done
