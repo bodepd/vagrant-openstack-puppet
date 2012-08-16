@@ -16,14 +16,14 @@ Vagrant::Config.run do |config|
   if num_instances_str = ENV['OPENSTACK_COMPUTE_NODES']
     num_instances = num_instances_str.to_i + 1
   else
-    num_instances = 3
+    num_instances = 2
   end
 
   # This assumes the master has one additional NIC that is host-only
   master_info = `VBoxManage showvminfo master.puppetlabs.vm`
   master_info.lines.each { |l| $master_nic_info = l if l =~ /NIC 2/ }
   unless $master_nic_info =~ /Host-only Interface '(\w+)'/
-    raise RuntimeError, "Could not determine the Host-only network adapter"
+    puts "Warning:Could not determine the Host-only network adapter, this may result in vm failures"
   end
   host_network = $1
 
