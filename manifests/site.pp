@@ -122,7 +122,7 @@ node /openstack-controller/ {
 
 node /openstack-compute/ {
   # External lookups.
-  $rabbit_connection_hash = collect_rabbit_connection('fqdn', 'architecture=amd64')
+  $rabbit_connection_hash = collect_rabbit_connection('ipaddress_eth0', 'architecture=amd64')
   $nova_db_addr = collect_nova_db_connection('ipaddress_eth0', 'architecture=amd64')
   $vnc_proxy_addr = unique(query_nodes('Class[nova::vncproxy]', 'ipaddress_eth0'))
   $glance_api_addr = unique(query_nodes('Class[glance::api]', 'ipaddress_eth0'))
@@ -135,7 +135,7 @@ node /openstack-compute/ {
     fixed_range        => $fixed_network_range,
     network_manager    => 'nova.network.manager.FlatDHCPManager',
     multi_host         => true,
-    sql_connection     => "mysql://nova:${nova_db_password}@${nova_db_addr}/nova",
+    sql_connection     => $nova_db_addr,
     nova_user_password => $nova_user_password,
     rabbit_host        => $rabbit_connection_hash['host'],
     rabbit_password    => $rabbit_password,
