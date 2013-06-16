@@ -110,7 +110,7 @@ namespace :openstack_demo do
   task :fetch_image do
     Dir.chdir("razor-puppet-puppetdb-demo/env/#{vagrant_env}") do
       unless File.exists? 'ubuntu-12.04-server-amd64.iso'
-        if File.exists? '../../../files/ubuntu-12.04-server-amd64.iso':
+        if File.exists? '../../../files/ubuntu-12.04-server-amd64.iso'
             FileUtils.cp '../../../files/ubuntu-12.04-server-amd64.iso', './'
         else
           system('curl -L http://releases.ubuntu.com/precise/ubuntu-12.04-server-amd64.iso -o ubuntu-12.04-server-amd64.iso')
